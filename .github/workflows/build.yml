@@ -6,58 +6,73 @@ name: Build
       - main
 
 jobs:
-  build:
-    name: ${{ matrix.os }} (${{ matrix.mode }})
-    runs-on: ${{ matrix.os }}
+  linux:
+    name: linux (${{ matrix.mode }})
+    runs-on: ubuntu-24.04
+    container: archlinux:latest
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-24.04
-          - windows-latest
-          - macos-latest
         mode:
           - debug
           - release
+    env:
+      XMAKE_ROOT: "y"
+    steps:
+      - name: Install dependencies
+        run: >
+          pacman -Syu --noconfirm base-devel git xmake clang llvm libc++ libc++abi
 
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache xmake
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.xmake
+            build
+          key: xmake-linux-${{ matrix.mode }}-${{ hashFiles('xmake.lua') }}
+          restore-keys: |
+            xmake-linux-${{ matrix.mode }}-
+
+      - name: Configure
+        run: >
+          xmake f -y -m ${{ matrix.mode }}
+          --toolchain=clang
+
+      - name: Build
+        run: xmake -y -v
+
+  window:
+    name: windows (${{ matrix.mode }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mode:
+          - debug
+          - release
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install xmake
         uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
 
-      - name: Install clang (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-18 clang-tools-18 libc++-18-dev libc++abi-18-dev
-
-      - name: Install LLVM (macOS)
-        if: runner.os == 'macOS'
-        run: brew install llvm
-
-      - name: Xmake cache
+      - name: Cache xmake
         uses: actions/cache@v4
         with:
           path: |
             ~/.xmake
-            ${{ github.workspace }}/.xmake
-            ${{ github.workspace }}/build
-          key: xmake-${{ matrix.os }}-${{ matrix.mode }}-${{ hashFiles('xmake.lua') }}
+            build
+          key: xmake-linux-${{ matrix.mode }}-${{ hashFiles('xmake.lua') }}
           restore-keys: |
-            xmake-${{ matrix.os }}-${{ matrix.mode }}-
+            xmake-linux-${{ matrix.mode }}-
 
-      - name: Configuration (Linux, clang)
-        if: runner.os == 'Linux'
-        run: xmake f -y -m ${{ matrix.mode }} --toolchain=clang-18
-
-      - name: Configuration (macOS, Homebrew LLVM)
-        if: runner.os == 'macOS'
-        run: xmake f -y -m ${{ matrix.mode }} --toolchain=llvm --sdk="$(brew --prefix llvm)"
-
-      - name: Configurer (Windows, MSVC)
-        if: runner.os == 'Windows'
+      - name: Configure
         run: xmake f -y -m ${{ matrix.mode }}
 
       - name: Build
