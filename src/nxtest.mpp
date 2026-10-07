@@ -1,57 +1,233 @@
+module;
+#include <chrono>
+#include <concepts>
+#include <functional>
+#include <source_location>
 export module nxtest;
 
 import std;
+
+namespace nx::test::detail {
 
 struct test_case {
   std::string name;
   std::function<void()> func;
 };
 
-std::vector<test_case> g_tests;
-int g_failed = 0;
+struct fatal_failure {};
+
+std::vector<test_case> tests;
+std::string current_test;
+int current_failures = 0;
+
+template <typename T>
+concept printable = requires(std::ostream &os, const T &v) { os << v; };
+
+template <typename T> std::string repr(const T &value) {
+  if constexpr (printable<T>) {
+    std::ostringstream oss;
+    oss << std::boolalpha << value;
+    return oss.str();
+  } else {
+    return "<non-printable>";
+  }
+}
+
+void fail(const std::string &message, const std::source_location &loc) {
+  std::cerr << "[FAIL] " << current_test << "(" << loc.file_name() << ":"
+            << loc.line() << ")\n\t" << message << "\n";
+  ++current_failures;
+}
+
+template <typename T, typename U, typename Cmp>
+void check(const T &actual, const U &expected, Cmp cmp, std::string_view op,
+           const std::source_location &loc) {
+  if (!cmp(actual, expected)) {
+    fail(std::format(
+             "expected: actual {} expected\n\tactual:   {}\n\texpected: {}", op,
+             repr(actual), repr(expected)),
+         loc);
+  }
+}
+
+} // namespace nx::test::detail
 
 export namespace nx::test {
 
 void add_test(std::string name, std::function<void()> func) {
-  g_tests.push_back({.name = std::move(name), .func = std::move(func)});
+  detail::tests.push_back({.name = std::move(name), .func = std::move(func)});
 }
+
+// --- Booleans ---
+
+void expect_true(bool condition, const std::source_location loc =
+                                     std::source_location::current()) {
+  if (!condition) {
+    detail::fail("expected: true\n\tgot:      false", loc);
+  }
+}
+
+void require_true(bool condition, const std::source_location loc =
+                                      std::source_location::current()) {
+  if (!condition) {
+    detail::fail("required: true\n\tgot:      false", loc);
+    throw detail::fatal_failure{};
+  }
+}
+
+void expect_false(bool condition, const std::source_location loc =
+                                      std::source_location::current()) {
+  if (condition) {
+    detail::fail("expected: false\n\tgot:      true", loc);
+  }
+}
+
+// --- Comparisons ---
 
 template <typename T, typename U>
 void expect_eq(
     const T &actual, const U &expected,
     const std::source_location loc = std::source_location::current()) {
-  if (actual != expected) {
-    std::cerr << "[FAIL] " << loc.file_name() << ":" << loc.line() << " in "
-              << loc.function_name() << "\n"
-              << "\tExpected: " << expected << "\n"
-              << "\tGot: " << actual << "\n";
-    ++g_failed;
+  detail::check(actual, expected, std::equal_to<>{}, "==", loc);
+}
+
+template <typename T, typename U>
+void require_eq(
+    const T &actual, const U &expected,
+    const std::source_location loc = std::source_location::current()) {
+  const int before = detail::current_failures;
+  detail::check(actual, expected, std::equal_to<>{}, "==", loc);
+  if (detail::current_failures != before) {
+    throw detail::fatal_failure();
   }
 }
 
-int run_all() {
-  std::cout << "Running " << g_tests.size() << " tests...\n";
+template <typename T, typename U>
+void expect_ne(
+    const T &actual, const U &expected,
+    const std::source_location loc = std::source_location::current()) {
+  detail::check(actual, expected, std::not_equal_to<>{}, "!=", loc);
+}
 
-  for (const auto &test : g_tests) {
+template <typename T, typename U>
+void expect_lt(
+    const T &actual, const U &expected,
+    const std::source_location loc = std::source_location::current()) {
+  detail::check(actual, expected, std::less<>{}, "<", loc);
+}
+
+template <typename T, typename U>
+void expect_le(
+    const T &actual, const U &expected,
+    const std::source_location loc = std::source_location::current()) {
+  detail::check(actual, expected, std::less_equal<>{}, "<=", loc);
+}
+
+template <typename T, typename U>
+void expect_gt(
+    const T &actual, const U &expected,
+    const std::source_location loc = std::source_location::current()) {
+  detail::check(actual, expected, std::greater<>{}, ">", loc);
+}
+
+template <typename T, typename U>
+void expect_ge(
+    const T &actual, const U &expected,
+    const std::source_location loc = std::source_location::current()) {
+  detail::check(actual, expected, std::greater_equal<>{}, ">=", loc);
+}
+
+// --- Floats ---
+
+template <std::floating_point T>
+void expect_near(
+    T actual, T expected, T epsilon = static_cast<T>(1e-6),
+    const std::source_location loc = std::source_location::current()) {
+  if (std::abs(actual - expected) > epsilon) {
+    detail::fail(std::format("expected: |actual - expected| <= {}\n\tactual:   "
+                             "{}\n\texpected: {}",
+                             epsilon, actual, expected),
+                 loc);
+  }
+}
+
+// --- Exceptions ---
+
+template <typename E = std::exception, typename F>
+void expect_throws(F &&func, const std::source_location loc =
+                                 std::source_location::current()) {
+  try {
+    std::forward<F>(func)();
+  } catch (const E &) {
+    return;
+  } catch (...) {
+    detail::fail("threw an exception of a different type", loc);
+    return;
+  }
+  detail::fail("expected an exception, but none was thrown", loc);
+}
+
+template <typename F>
+void expect_no_throw(F &&func, const std::source_location loc =
+                                   std::source_location::current()) {
+  try {
+    std::forward<F>(func)();
+  } catch (const std::exception &e) {
+    detail::fail(std::format("unexpected exception: {}", e.what()), loc);
+  } catch (...) {
+    detail::fail("unexpected exception of unknown type", loc);
+  }
+}
+
+// --- Execution ---
+
+int run_all() {
+  using clock = std::chrono::steady_clock;
+
+  std::cout << "Running " << detail::tests.size() << " tests...\n";
+
+  std::size_t failed_tests = 0;
+  const auto suite_start = clock::now();
+
+  for (const auto &test : detail::tests) {
+    detail::current_test = test.name;
+    detail::current_failures = 0;
+
+    const auto start = clock::now();
     try {
       test.func();
+    } catch (const detail::fatal_failure &) {
+      // already signaled
     } catch (const std::exception &e) {
       std::cerr << "[CRASH] Test '" << test.name << "' threw: " << e.what()
                 << "\n";
-      ++g_failed;
+      ++detail::current_failures;
     } catch (...) {
       std::cerr << "[CRASH] Test '" << test.name
                 << "' threw an unknown exception.\n";
-      ++g_failed;
+      ++detail::current_failures;
     }
+    const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+        clock::now() - start);
+
+    const bool ok = detail::current_failures == 0;
+    if (!ok) {
+      ++failed_tests;
+    }
+    std::cout << (ok ? "[ OK ] " : "[FAILED] ") << test.name << " ("
+              << elapsed.count() << " ms)\n";
   }
 
-  std::cout << "\n--- Summary ---\n"
-            << "Passed: " << (g_tests.size() - g_failed) << " / "
-            << g_tests.size() << "\n"
-            << "Failed: " << g_failed << "\n";
+  const auto total_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+      clock::now() - suite_start);
 
-  return g_failed > 0;
+  std::cout << "\n--- Summary ---\n"
+            << "Passed: " << (detail::tests.size() - failed_tests) << " / "
+            << detail::tests.size() << "\n"
+            << "Failed: " << failed_tests << "\n"
+            << "Time:   " << total_ms.count() << " ms\n";
+
+  return failed_tests > 0 ? 1 : 0;
 }
 
 } // namespace nx::test
