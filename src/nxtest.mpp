@@ -1,0 +1,57 @@
+export module nxtest;
+
+import std;
+
+struct test_case {
+  std::string name;
+  std::function<void()> func;
+};
+
+std::vector<test_case> g_tests;
+int g_failed = 0;
+
+export namespace nxtest {
+
+void add_test(std::string name, std::function<void()> func) {
+  g_tests.push_back({.name = std::move(name), .func = std::move(func)});
+}
+
+template <typename T, typename U>
+void expect_eq(
+    const T &actual, const U &expected,
+    const std::source_location loc = std::source_location::current()) {
+  if (actual != expected) {
+    std::cerr << "[FAIL] " << loc.file_name() << ":" << loc.line() << " in "
+              << loc.function_name() << "\n"
+              << "\tExpected: " << expected << "\n"
+              << "\tGot: " << actual << "\n";
+    ++g_failed;
+  }
+}
+
+int run_all() {
+  std::cout << "Running " << g_tests.size() << " tests...\n";
+
+  for (const auto &test : g_tests) {
+    try {
+      test.func();
+    } catch (const std::exception &e) {
+      std::cerr << "[CRASH] Test '" << test.name << "' threw: " << e.what()
+                << "\n";
+      ++g_failed;
+    } catch (...) {
+      std::cerr << "[CRASH] Test '" << test.name
+                << "' threw an unknown exception.\n";
+      ++g_failed;
+    }
+  }
+
+  std::cout << "\n--- Summary ---\n"
+            << "Passed: " << (g_tests.size() - g_failed) << " / "
+            << g_tests.size() << "\n"
+            << "Failed: " << g_failed << "\n";
+
+  return g_failed > 0;
+}
+
+} // namespace nxtest
