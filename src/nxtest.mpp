@@ -10,7 +10,7 @@ struct test_case {
 std::vector<test_case> g_tests;
 int g_failed = 0;
 
-export namespace nxtest {
+export namespace nx::test {
 
 void add_test(std::string name, std::function<void()> func) {
   g_tests.push_back({.name = std::move(name), .func = std::move(func)});
@@ -54,4 +54,4 @@ int run_all() {
   return g_failed > 0;
 }
 
-} // namespace nxtest
+} // namespace nx::test

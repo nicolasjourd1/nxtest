@@ -6,15 +6,15 @@ std::string greet(const std::string &name) { return "Hello, " + name; }
 
 int main() {
 
-  nxtest::add_test("addition", []() {
-    nxtest::expect_eq(add(2, 3), 5);
-    nxtest::expect_eq(add(1, 1), 1);
+  nx::test::add_test("addition", []() {
+    nx::test::expect_eq(add(2, 3), 5);
+    nx::test::expect_eq(add(1, 1), 1);
   });
 
-  nxtest::add_test("greeting", []() {
-    nxtest::expect_eq(greet("Alice"), std::string("Hello, Alice"));
-    nxtest::expect_eq(greet("Bob"), std::string("Hello, Bob"));
+  nx::test::add_test("greeting", []() {
+    nx::test::expect_eq(greet("Alice"), std::string("Hello, Alice"));
+    nx::test::expect_eq(greet("Bob"), std::string("Hello, Bob"));
   });
 
-  return nxtest::run_all();
+  return nx::test::run_all();
 }
