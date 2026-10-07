@@ -18,7 +18,7 @@ A small testing library for C++23 programs, written as a module.
 
 Configure the project and specify the toolchain, e.g clang.
 ```sh
-xmake config [c] -m <mode> --toolchain=<toolchain>
+xmake config [-c] -m <mode> --toolchain=<toolchain>
 ```
 
 Generate the project for your editor/LSP, e.g compile_commands for clangd.
