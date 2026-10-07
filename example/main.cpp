@@ -1,20 +1,19 @@
-import std;
 import nxtest;
+import std;
 
-int add(int x, int y) { return x + y; }
-std::string greet(const std::string &name) { return "Hello, " + name; }
+using namespace nx::test;
 
 int main() {
-
-  nx::test::add_test("addition", []() {
-    nx::test::expect_eq(add(2, 3), 5);
-    nx::test::expect_eq(add(1, 1), 1);
+  add_test("math", [] {
+    expect_eq(1 + 1, 2);
+    expect_near(0.1 + 0.2, 0.3);
+    expect_lt(1, 2);
   });
 
-  nx::test::add_test("greeting", []() {
-    nx::test::expect_eq(greet("Alice"), std::string("Hello, Alice"));
-    nx::test::expect_eq(greet("Bob"), std::string("Hello, Bob"));
+  add_test("exceptions", [] {
+    expect_throws<std::out_of_range>([] { return std::vector<int>{}.at(0); });
+    expect_no_throw([] { return std::vector<int>{}.at(1); });
   });
 
-  return nx::test::run_all();
+  return run_all();
 }
