@@ -14,6 +14,8 @@ A small testing library for C++23 programs, written as a module.
 - A C++23 compliant compiler
 - xmake 3.0.0+
 
+Currently the project is using the clang toolchain for better integration since C++ module support isn't at its peak.
+
 ## Building
 
 Configure the project and specify the toolchain, e.g clang.

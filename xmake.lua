@@ -1,11 +1,17 @@
 set_xmakever("3.0.0")
 
-set_project("nxgraph")
+set_project("nxtest")
+set_languages("c++23")
 set_version("0.1.0")
 
 add_rules("mode.debug", "mode.release")
 
-set_languages("c++23")
+-- need to specify the lsp for certains things to work properly (e.g go to definition)
+add_rules("plugin.compile_commands.autoupdate", {outputdir = ".", lsp = "clangd"})
+
+set_toolchains("clang")
+set_runtimes("c++_shared")
+set_policy("build.c++.modules", true)
 
 target("nxtest")
     set_kind("static")
