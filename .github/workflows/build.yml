@@ -4,6 +4,8 @@ name: Build
   push:
     branches:
       - main
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   linux:
@@ -44,7 +46,7 @@ jobs:
       - name: Build
         run: xmake -y -v
 
-  window:
+  windows:
     name: windows (${{ matrix.mode }})
     runs-on: windows-latest
     strategy:
@@ -68,9 +70,9 @@ jobs:
           path: |
             ~/.xmake
             build
-          key: xmake-linux-${{ matrix.mode }}-${{ hashFiles('xmake.lua') }}
+          key: xmake-windows-${{ matrix.mode }}-${{ hashFiles('xmake.lua') }}
           restore-keys: |
-            xmake-linux-${{ matrix.mode }}-
+            xmake-windows-${{ matrix.mode }}-
 
       - name: Configure
         run: xmake f -y -m ${{ matrix.mode }}
