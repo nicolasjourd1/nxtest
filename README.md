@@ -10,31 +10,48 @@
 
 A small testing library for C++23 programs, written as a module.
 
-## Requirements
-- A C++23 compliant compiler
-- xmake 3.0.0+
+<p align="center">
+    <a href="#requirements">Requirements</a>
+    <a>-</a>
+    <a href="#building">Building</a>
+    <a>-</a>
+    <a href="#usage">Usage</a>
+</p>
 
-Currently the project is using the clang toolchain for better integration since C++ module support isn't at its peak.
+## Requirements
+
+[xmake](https://xmake.io) 3.0.0 or newer and a C++ compiler, more information below.
+
+<div align="center">
+| Platform | Compiler | Standard Library |
+| -------- | -------- | ---------------- |
+| Linux    | clang    | libc++           |
+| Windows  | MSVC     | MSVC STL         |
+</div>
+
+C++ module support still varies a lot between toolchains, which is why the toolchain is explicited, rather than left to auto-detection.
 
 ## Building
 
-Configure the project and specify the toolchain, e.g clang.
 ```sh
-xmake config [-c] -m <mode> --toolchain=<toolchain>
-```
-
-Generate the project for your editor/LSP, e.g compile_commands for clangd.
-
-```sh
-xmake project -k <kind>
-```
-
-Build the project.
-``` sh
+xmake f -c -m release # or -m debug
 xmake build
 ```
 
-You may then run the example tests.
+Run the example:
+
 ```sh
 xmake run example
 ```
+
+## Usage
+
+TODO
+
+## Contributing
+
+Any contribution or advice is more than welcomed.
+
+## License
+
+Distributed under the MIT license. See [`LICENSE.md`](./LICENSE.md)
