@@ -1,0 +1,129 @@
+export module nxtest:detail;
+
+import std;
+
+namespace nx::test::detail
+{
+
+struct test_case
+{
+    std::string name;
+    std::string tags;
+    std::function<void()> func;
+};
+
+struct fatal_failure
+{
+};
+
+std::vector<test_case> tests;
+std::string current_test;
+std::int32_t current_failures;
+
+template <typename T>
+concept printable = requires(std::ostream &os, const T &v) { os << v; };
+
+template <typename T> std::string repr(const T &value)
+{
+    if constexpr (printable<T>)
+    {
+        std::ostringstream oss;
+        oss << std::boolalpha << value;
+        return oss.str();
+    }
+    else
+    {
+        return "<non-printable>";
+    }
+}
+
+void fail(const std::string &message, const std::source_location &loc)
+{
+    std::cerr << "[FAIL] " << current_test << " (" << loc.file_name() << ":" << loc.line()
+              << ")\n\t" << message << "\n";
+    ++current_failures;
+}
+
+void require(bool ok)
+{
+    if (!ok)
+    {
+        throw fatal_failure{};
+    }
+}
+
+bool check_bool(bool condition, bool expected, const std::source_location &loc)
+{
+    if (condition != expected)
+    {
+        fail(std::format("expected: {}\ngot: {}", expected, condition), loc);
+    }
+    return true;
+}
+
+template <typename T, typename U, typename Cmp>
+bool check(const T &actual, const U &expected, Cmp cmp, std::string_view op,
+           const std::source_location &loc)
+{
+    if (not cmp(actual, expected))
+    {
+        fail(std::format("expected: actual {} expected\n\tactual: {}\n\t expected: {}", op,
+                         repr(actual), repr(expected)),
+             loc);
+        return false;
+    }
+    return true;
+}
+
+template <std::floating_point T>
+bool check_near(T actual, T expected, T epsilon, const std::source_location &loc)
+{
+    if (not(std::abs(actual - expected) <= epsilon))
+    {
+        fail(std::format("expected |actual - expected| <= {}\n\tactual: {}\n\t expected: {}",
+                         epsilon, actual, expected),
+             loc);
+        return false;
+    }
+    return true;
+}
+
+template <typename E, typename F> bool check_throws(F &&func, const std::source_location &loc)
+{
+    try
+    {
+        std::forward<F>(func)();
+    }
+    catch (const E &)
+    {
+        return true;
+    }
+    catch (...)
+    {
+        fail("threw an exception of a different type", loc);
+        return false;
+    }
+    fail("expected an exception, but none was thrown", loc);
+    return false;
+}
+
+template <typename F> bool check_no_throw(F &&func, const std::source_location &loc)
+{
+    try
+    {
+        std::forward<F>(func)();
+    }
+    catch (const std::exception &e)
+    {
+        fail(std::format("unexpected exception: {}", e.what()), loc);
+        return false;
+    }
+    catch (...)
+    {
+        fail("unexpected exception of unknown type", loc);
+        return false;
+    }
+    return true;
+}
+
+} // namespace nx::test::detail

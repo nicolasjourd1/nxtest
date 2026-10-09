@@ -1,0 +1,97 @@
+export module nxtest:expect;
+
+import std;
+import :detail;
+
+export namespace nx::test
+{
+
+//========================================================================
+//===                           Booleans                               ===
+//========================================================================
+
+void expect_true(bool condition, const std::source_location loc = std::source_location::current())
+{
+    detail::check_bool(condition, true, loc);
+}
+
+void expect_false(bool condition, const std::source_location loc = std::source_location::current())
+{
+    detail::check_bool(condition, false, loc);
+}
+
+//========================================================================
+//===                           Comparisons                            ===
+//========================================================================
+
+template <typename T, typename U>
+void expect_eq(const T &actual, const U &expected,
+               const std::source_location loc = std::source_location::current())
+{
+    detail::check(actual, expected, std::equal_to<>{}, "==", loc);
+}
+
+template <typename T, typename U>
+void expect_ne(const T &actual, const U &expected,
+               const std::source_location loc = std::source_location::current())
+{
+    detail::check(actual, expected, std::not_equal_to<>{}, "!=", loc);
+}
+
+template <typename T, typename U>
+void expect_lt(const T &actual, const U &expected,
+               const std::source_location loc = std::source_location::current())
+{
+    detail::check(actual, expected, std::less<>{}, "<", loc);
+}
+
+template <typename T, typename U>
+void expect_le(const T &actual, const U &expected,
+               const std::source_location loc = std::source_location::current())
+{
+    detail::check(actual, expected, std::less_equal<>{}, "<=", loc);
+}
+
+template <typename T, typename U>
+void expect_gt(const T &actual, const U &expected,
+               const std::source_location loc = std::source_location::current())
+{
+    detail::check(actual, expected, std::greater<>{}, ">", loc);
+}
+
+template <typename T, typename U>
+void expect_ge(const T &actual, const U &expected,
+               const std::source_location loc = std::source_location::current())
+{
+    detail::check(actual, expected, std::greater_equal<>{}, ">=", loc);
+}
+
+//========================================================================
+//===                         Floating point                           ===
+//========================================================================
+
+template <std::floating_point T>
+void expect_near(T actual, std::type_identity_t<T> expected,
+                 std::type_identity_t<T> epsilon = static_cast<T>(1e-6),
+                 const std::source_location loc = std::source_location::current())
+{
+    detail::check_near(actual, expected, epsilon, loc);
+}
+
+//========================================================================
+//===                           Exceptions                             ===
+//========================================================================
+
+template <typename E = std::exception, typename F>
+void expect_throws(F &&func, const std::source_location loc = std::source_location::current())
+{
+    detail::check_throws<E>(std::forward<F>(func), loc);
+}
+
+template <typename F>
+void expect_no_throw(F &&func, const std::source_location loc = std::source_location::current())
+{
+    detail::check_no_throw(std::forward<F>(func), loc);
+}
+
+} // namespace nx::test

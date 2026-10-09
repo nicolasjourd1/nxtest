@@ -1,0 +1,72 @@
+export module nxtest:runner;
+
+import std;
+import :detail;
+
+export namespace nx::test
+{
+
+void add_test(std::string name, std::string tags, std::function<void()> func)
+{
+    detail::tests.push_back(
+        {.name = std::move(name), .tags = std::move(tags), .func = std::move(func)});
+}
+
+int run_all()
+{
+    using clock = std::chrono::steady_clock;
+
+    std::cout << "Running " << detail::tests.size() << " tests...\n";
+
+    std::size_t failed_tests = 0;
+    const auto suite_start = clock::now();
+
+    for (const auto &test : detail::tests)
+    {
+        detail::current_test = test.name;
+        detail::current_failures = 0;
+
+        const auto start = clock::now();
+        try
+        {
+            test.func();
+        }
+        catch (const detail::fatal_failure &)
+        {
+            // already signaled by require_* functions
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "[CRASH] Test '" << test.name << "' threw: " << e.what() << "\n";
+            ++detail::current_failures;
+        }
+        catch (...)
+        {
+            std::cerr << "[CRASH] Test '" << test.name << "' threw an unknown exception.\n";
+            ++detail::current_failures;
+        }
+        const auto elapsed =
+            std::chrono::duration_cast<std::chrono::milliseconds>(clock::now() - start);
+
+        const bool ok = detail::current_failures == 0;
+        if (!ok)
+        {
+            ++failed_tests;
+        }
+        std::cout << (ok ? "[ OK ]" : "[FAILED] ") << test.name << " (" << elapsed.count()
+                  << " ms)\n";
+    }
+
+    const auto total_ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>(clock::now() - suite_start);
+
+    std::cout << "\n--- Summary ---\n"
+              << "Passed: " << (detail::tests.size() - failed_tests) << " / "
+              << detail::tests.size() << "\n"
+              << "Failed: " << failed_tests << "\n"
+              << "Time: " << total_ms.count() << " ms\n";
+
+    return failed_tests > 0 ? 1 : 0;
+}
+
+} // namespace nx::test
