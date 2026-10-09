@@ -6,11 +6,16 @@ set_version("0.1.0")
 
 add_rules("mode.debug", "mode.release")
 
--- need to specify the lsp for certains things to work properly (e.g go to definition)
-add_rules("plugin.compile_commands.autoupdate", {outputdir = ".", lsp = "clangd"})
 
-set_toolchains("clang")
-set_runtimes("c++_shared")
+if is_plat("windows") then
+    set_toolchains("msvc")
+else
+    add_rules("plugin.compile_commands.autoupdate", {outputdir = ".", lsp = "clangd"})
+
+    set_toolchains("clang")
+    set_runtimes("c++_shared")
+end
+
 set_policy("build.c++.modules", true)
 
 target("nxtest")
