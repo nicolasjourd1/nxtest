@@ -22,12 +22,10 @@ A small testing library for C++23 programs, written as a module.
 
 [xmake](https://xmake.io) 3.0.0 or newer and a C++ compiler, more information below.
 
-<div align="center">
 | Platform | Compiler | Standard Library |
 | -------- | -------- | ---------------- |
 | Linux    | clang    | libc++           |
 | Windows  | MSVC     | MSVC STL         |
-</div>
 
 C++ module support still varies a lot between toolchains, which is why the toolchain is explicited, rather than left to auto-detection.
 
@@ -50,8 +48,8 @@ TODO
 
 ## Contributing
 
-Any contribution or advice is more than welcomed.
+Any contribution is more than welcomed.
 
 ## License
 
-Distributed under the MIT license. See [`LICENSE.md`](./LICENSE.md)
+Distributed under the MIT license. See [`LICENSE.md`](LICENSE.md)
