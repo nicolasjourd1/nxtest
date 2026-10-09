@@ -12,22 +12,26 @@ A small testing library for C++23 programs, written as a module.
 
 <p align="center">
     <a href="#requirements">Requirements</a>
-    <a>-</a>
+    <a>◇</a>
     <a href="#building">Building</a>
-    <a>-</a>
+    <a>◇</a>
     <a href="#usage">Usage</a>
+    <a>◇</a>
+    <a href=#license>License</a>
 </p>
 
 ## Requirements
 
-[xmake](https://xmake.io) 3.0.0 or newer and a C++ compiler, more information below.
+[xmake](https://xmake.io) 3.0.0 or newer and a C++23 compliant compiler with module support, ideally a recent one.
+
+Module support still varies a lot between toolchains, which is why the toolchain is specified explicitly per platform, rather than left to auto-detection. See below.
 
 | Platform | Compiler | Standard Library |
 | -------- | -------- | ---------------- |
 | Linux    | clang    | libc++           |
 | Windows  | MSVC     | MSVC STL         |
 
-C++ module support still varies a lot between toolchains, which is why the toolchain is explicited, rather than left to auto-detection.
+On Linux, make sure libc++ is installed alongside clang, e.g. `libc++` and `libc++abi` on Arch, `libc++-dev` and `libc++abi-dev` on Debian/Ubuntu.
 
 ## Building
 
@@ -44,7 +48,12 @@ xmake run example
 
 ## Usage
 
-TODO
+```C++
+import nxtest;
+
+// TODO
+
+```
 
 ## Contributing
 
@@ -52,4 +61,4 @@ Any contribution is more than welcomed.
 
 ## License
 
-Distributed under the MIT license. See [`LICENSE.md`](LICENSE.md)
+Distributed under the MIT license. See [`LICENSE`](LICENSE).
