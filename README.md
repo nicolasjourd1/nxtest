@@ -51,7 +51,15 @@ xmake run example
 ```C++
 import nxtest;
 
-// TODO
+using namespace nx::test;
+
+int main(){
+    add_test("addition", "[math]", [] {
+        expect_eq(1 + 1, 2;
+    })
+
+    return run_all();
+}
 
 ```
 
