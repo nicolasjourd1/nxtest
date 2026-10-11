@@ -18,7 +18,7 @@ struct fatal_failure
 
 std::vector<test_case> tests;
 std::string current_test;
-std::int32_t current_failures;
+std::int32_t current_failures = 0;
 
 template <typename T>
 concept printable = requires(std::ostream &os, const T &v) { os << v; };
@@ -56,7 +56,8 @@ bool check_bool(bool condition, bool expected, const std::source_location &loc)
 {
     if (condition != expected)
     {
-        fail(std::format("expected: {}\ngot: {}", expected, condition), loc);
+        fail(std::format("expected: {}\n\tgot: {}", expected, condition), loc);
+        return false;
     }
     return true;
 }
@@ -67,7 +68,7 @@ bool check(const T &actual, const U &expected, Cmp cmp, std::string_view op,
 {
     if (not cmp(actual, expected))
     {
-        fail(std::format("expected: actual {} expected\n\tactual: {}\n\t expected: {}", op,
+        fail(std::format("expected: actual {} expected\n\tactual: {}\n\texpected: {}", op,
                          repr(actual), repr(expected)),
              loc);
         return false;
@@ -80,7 +81,7 @@ bool check_near(T actual, T expected, T epsilon, const std::source_location &loc
 {
     if (not(std::abs(actual - expected) <= epsilon))
     {
-        fail(std::format("expected |actual - expected| <= {}\n\tactual: {}\n\t expected: {}",
+        fail(std::format("expected |actual - expected| <= {}\n\tactual: {}\n\texpected: {}",
                          epsilon, actual, expected),
              loc);
         return false;
@@ -97,6 +98,10 @@ template <typename E, typename F> bool check_throws(F &&func, const std::source_
     catch (const E &)
     {
         return true;
+    }
+    catch (const fatal_failure &)
+    {
+        throw;
     }
     catch (...)
     {
@@ -117,6 +122,10 @@ template <typename F> bool check_no_throw(F &&func, const std::source_location &
     {
         fail(std::format("unexpected exception: {}", e.what()), loc);
         return false;
+    }
+    catch (const fatal_failure &)
+    {
+        throw;
     }
     catch (...)
     {

@@ -53,7 +53,7 @@ int run_all()
         {
             ++failed_tests;
         }
-        std::cout << (ok ? "[ OK ]" : "[FAILED] ") << test.name << " (" << elapsed.count()
+        std::cout << (ok ? "[ OK ] " : "[FAILED] ") << test.name << " (" << elapsed.count()
                   << " ms)\n";
     }
 

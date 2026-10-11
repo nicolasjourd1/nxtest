@@ -1,5 +1,6 @@
 export module nxtest;
 
+export import :detail;
 export import :expect;
 export import :require;
 export import :runner;
